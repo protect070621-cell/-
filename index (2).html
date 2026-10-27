@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>날씨별 옷차림</title>
+<style>
+:root{--bg:#f3f6fb;--card:#fff;--ink:#1d2433;--sub:#5b6579;--line:#dde3ee;--acc:#2f6fed;--acc-ink:#fff;--soft:#e8f0ff;--err:#c62828;--ok:#2e7d32;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10141c;--card:#1a2030;--ink:#e8ecf5;--sub:#9aa5bb;--line:#2b3347;--acc:#6b9bff;--acc-ink:#0b1020;--soft:#233152;--err:#ff8a80;--ok:#81c784}}
+:root[data-theme="dark"]{--bg:#10141c;--card:#1a2030;--ink:#e8ecf5;--sub:#9aa5bb;--line:#2b3347;--acc:#6b9bff;--acc-ink:#0b1020;--soft:#233152;--err:#ff8a80;--ok:#81c784}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 20px 48px}
+header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+h1{margin:0;font-size:28px}
+.date{color:var(--sub);font-size:15px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.card h2{margin:0 0 12px;font-size:18px}
+.full{grid-column:1/-1}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px;color:var(--sub)}
+input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.inline{display:flex;gap:8px}
+.inline input{flex:1}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;border-radius:9px}
+button.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:700}
+button.danger{color:var(--err)}
+.msg{min-height:20px;font-size:13px;margin-top:6px}
+.msg.err{color:var(--err)}.msg.ok{color:var(--ok)}
+.hint{font-size:12px;color:var(--sub);margin-top:4px}
+.big{font-size:46px;font-weight:800;line-height:1.1}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chip{background:var(--soft);padding:5px 11px;border-radius:99px;font-size:13px}
+.outfit{list-style:none;padding:0;margin:8px 0;display:flex;flex-wrap:wrap;gap:8px}
+.outfit li{background:var(--soft);padding:8px 13px;border-radius:10px;font-weight:600}
+.tips{margin:8px 0 0;padding-left:18px}
+.tips li{margin:4px 0}
+.empty{color:var(--sub)}
+.radios{display:flex;gap:8px;flex-wrap:wrap}
+.radios label{display:flex;align-items:center;gap:6px;margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:9px;font-weight:500;color:var(--ink);cursor:pointer}
+.radios input{width:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--sub);font-weight:600}
+.scroll{overflow-x:auto}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>👕 날씨별 옷차림</h1>
+    <div class="date" id="today"></div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>1. 위치와 날짜</h2>
+      <label for="place">장소 (직접 입력 가능)</label>
+      <div class="inline">
+        <input id="place" type="text" maxlength="30" placeholder="예: 서울 강남구">
+        <button id="geoBtn" type="button">내 위치 찾기</button>
+      </div>
+      <div class="hint" id="geoInfo"></div>
+      <label for="dateIn">날짜</label>
+      <input id="dateIn" type="date">
+      <div class="msg" id="placeMsg"></div>
+    </section>
+
+    <section class="card">
+      <h2>2. 오늘의 날씨 입력</h2>
+      <div class="hint">외부 서비스를 쓰지 않으므로 날씨 앱에서 본 숫자를 입력해 주세요.</div>
+      <div class="row">
+        <div><label for="temp">기온 (°C)</label><input id="temp" type="number" step="0.1" placeholder="예: 12"></div>
+        <div><label for="wind">풍속 (m/s)</label><input id="wind" type="number" step="0.1" placeholder="예: 4"></div>
+      </div>
+      <div class="row">
+        <div><label for="hum">습도 (%)</label><input id="hum" type="number" step="1" placeholder="예: 55"></div>
+        <div><label for="uv">자외선 지수 (0~15)</label><input id="uv" type="number" step="1" placeholder="예: 5"></div>
+      </div>
+      <label for="cond">하늘 상태</label>
+      <select id="cond">
+        <option value="sunny">맑음</option>
+        <option value="part">구름 조금</option>
+        <option value="cloud">흐림</option>
+        <option value="rain">비</option>
+        <option value="snow">눈</option>
+      </select>
+      <div class="msg" id="wMsg"></div>
+      <button id="recBtn" class="pri" type="button" style="width:100%">옷 추천 받기</button>
+    </section>
+
+    <section class="card full" id="result">
+      <h2>추천 결과</h2>
+      <div class="empty">날씨를 입력하고 추천 버튼을 눌러 주세요.</div>
+    </section>
+
+    <section class="card">
+      <h2>3. 외출 후 후기</h2>
+      <div class="hint">추천을 받은 뒤, 실제로 나가 보고 어땠는지 알려 주세요. 다음 추천에 반영됩니다.</div>
+      <label for="wore">실제로 입은 옷 (선택)</label>
+      <input id="wore" type="text" maxlength="40" placeholder="예: 맨투맨 + 가디건">
+      <label>체감은 어땠나요?</label>
+      <div class="radios" id="feelRadios">
+        <label><input type="radio" name="feel" value="-1"> 추웠어요</label>
+        <label><input type="radio" name="feel" value="0"> 적당했어요</label>
+        <label><input type="radio" name="feel" value="1"> 더웠어요</label>
+      </div>
+      <label for="sat">만족도</label>
+      <select id="sat">
+        <option value="">선택해 주세요</option>
+        <option value="5">★★★★★ 아주 만족</option>
+        <option value="4">★★★★ 만족</option>
+        <option value="3">★★★ 보통</option>
+        <option value="2">★★ 아쉬움</option>
+        <option value="1">★ 불만족</option>
+      </select>
+      <div class="msg" id="rMsg"></div>
+      <button id="saveBtn" class="pri" type="button" style="width:100%">후기 저장</button>
+    </section>
+
+    <section class="card">
+      <h2>내 맞춤 보정</h2>
+      <div id="learn" class="empty">아직 후기가 없어요.</div>
+    </section>
+
+    <section class="card full">
+      <div class="top"><h2 style="margin:0">저장된 후기</h2><button id="clearBtn" class="danger" type="button">전체 삭제</button></div>
+      <div class="scroll" id="history"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY="ootd.v1";
+  var mem={reviews:[],place:""};
+  var last=null; // 마지막 추천 정보
+  var $=function(id){return document.getElementById(id);};
+
+  function load(){
+    try{var s=localStorage.getItem(KEY);if(s){var d=JSON.parse(s);if(d&&Array.isArray(d.reviews))mem=d;}}catch(e){}
+  }
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(mem));}catch(e){}}
+  function setMsg(el,text,type){el.textContent=text||"";el.className="msg"+(type?" "+type:"");}
+  function pad(n){return n<10?"0"+n:""+n;}
+  function ymd(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+
+  // ---------- 1. 위치와 날짜 ----------
+  function initDate(){
+    var now=new Date();
+    var days=["일","월","화","수","목","금","토"];
+    $("today").textContent=now.getFullYear()+"년 "+(now.getMonth()+1)+"월 "+now.getDate()+"일 ("+days[now.getDay()]+") 기준";
+    $("dateIn").value=ymd(now);
+  }
+  function initPlace(){
+    var tz="";
+    try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"";}catch(e){}
+    if(mem.place){$("place").value=mem.place;}
+    else if(tz.indexOf("Seoul")>-1){$("place").value="서울";}
+    $("geoInfo").textContent=tz?("기기 시간대: "+tz+" (위치 권한을 허용하면 좌표도 확인할 수 있어요)"):"";
+  }
+  $("geoBtn").addEventListener("click",function(){
+    if(!navigator.geolocation){setMsg($("placeMsg"),"이 브라우저는 위치 찾기를 지원하지 않아요. 장소를 직접 입력해 주세요.","err");return;}
+    setMsg($("placeMsg"),"위치를 확인하는 중이에요...");
+    navigator.geolocation.getCurrentPosition(function(p){
+      var la=p.coords.latitude.toFixed(3),lo=p.coords.longitude.toFixed(3);
+      $("geoInfo").textContent="현재 좌표: 위도 "+la+", 경도 "+lo;
+      if(!$("place").value.trim())$("place").value="현재 위치 ("+la+", "+lo+")";
+      setMsg($("placeMsg"),"위치를 찾았어요. 동네 이름으로 바꾸고 싶으면 직접 고쳐 주세요.","ok");
+    },function(err){
+      var m="위치를 가져오지 못했어요. 장소를 직접 입력해 주세요.";
+      if(err&&err.code===1)m="위치 권한이 거부되었어요. 장소를 직접 입력해 주세요.";
+      setMsg($("placeMsg"),m,"err");
+    },{timeout:8000});
+  });
+  function validPlace(){
+    var v=$("place").value.trim();
+    if(!v){setMsg($("placeMsg"),"장소를 입력하거나 [내 위치 찾기]를 눌러 주세요.","err");return null;}
+    if(v.length>30||!/^[\p{L}\p{N}\s\-.,()·]+$/u.test(v)){setMsg($("placeMsg"),"장소에는 글자, 숫자, 공백, - . , ( ) 만 쓸 수 있어요. (30자 이내)","err");return null;}
+    setMsg($("placeMsg"),"");return v;
+  }
+  function validDate(){
+    var v=$("dateIn").value;
+    if(!v||isNaN(new Date(v).getTime())){setMsg($("placeMsg"),"날짜를 올바르게 선택해 주세요.","err");return null;}
+    return v;
+  }
+
+  // ---------- 계산 ----------
+  function feelsLike(t,w,h){
+    if(t<=10&&w>=1.4){var v=Math.pow(w*3.6,0.16);return 13.12+0.6215*t-11.37*v+0.3965*t*v;}
+    var e=h/100*6.105*Math.exp(17.27*t/(237.7+t));
+    return t+0.33*e-0.7*w-4.0;
+  }
+  function uvLabel(u){return u<3?"낮음":u<6?"보통":u<8?"높음":u<11?"매우 높음":"위험";}
+  function personalOffset(feelsNow){
+    var rs=mem.reviews.filter(function(r){return typeof r.feel==="number";});
+    if(!rs.length)return {off:0,n:0};
+    var near=rs.filter(function(r){return Math.abs(r.feels-feelsNow)<=6;});
+    var use=near.length?near:rs, wgt=near.length?1:0.5;
+    use=use.slice(-10);
+    var sum=0,ws=0;
+    use.forEach(function(r,i){var w=i+1;sum+=r.feel*w;ws+=w;});
+    var off=(sum/ws)*2.5*wgt; // 추웠다(-1) → 더 춥게 취급
+    off=Math.max(-4,Math.min(4,off));
+    return {off:off,n:use.length};
+  }
+  var TIERS=[
+    [28,"민소매·반팔 + 반바지","시원한 린넨·면 소재"],
+    [23,"반팔 + 얇은 바지","통풍 잘 되는 옷"],
+    [20,"얇은 긴팔 또는 셔츠","가벼운 가디건 하나"],
+    [17,"맨투맨 + 가디건","얇은 니트도 좋아요"],
+    [12,"자켓 + 니트","가벼운 청바지·면바지"],
+    [9,"트렌치코트·야상 + 니트","보온 되는 바지"],
+    [5,"코트 + 두꺼운 니트","목도리 추가"],
+    [-99,"패딩 + 히트텍","장갑·목도리·기모 바지"]
+  ];
+  function pickTier(t){for(var i=0;i<TIERS.length;i++){if(t>=TIERS[i][0])return TIERS[i];}return TIERS[TIERS.length-1];}
+
+  // ---------- 2. 추천 ----------
+  function numVal(id,min,max,name,unit){
+    var raw=$(id).value.trim();
+    if(raw===""){return {err:name+"을(를) 입력해 주세요."};}
+    var n=Number(raw);
+    if(!isFinite(n)){return {err:name+"은(는) 숫자로 입력해 주세요."};}
+    if(n<min||n>max){return {err:name+"은(는) "+min+"~"+max+unit+" 범위로 입력해 주세요."};}
+    return {v:n};
+  }
+  $("recBtn").addEventListener("click",function(){
+    var place=validPlace(), date=validDate();
+    if(!place||!date)return;
+    var T=numVal("temp",-50,60,"기온","°C"), W=numVal("wind",0,60,"풍속","m/s"),
+        H=numVal("hum",0,100,"습도","%"), U=numVal("uv",0,15,"자외선 지수","");
+    var errs=[T,W,H,U].filter(function(x){return x.err;}).map(function(x){return x.err;});
+    if(errs.length){setMsg($("wMsg"),errs[0],"err");return;}
+    setMsg($("wMsg"),"");
+    mem.place=place;save();
+
+    var cond=$("cond").value;
+    var feels=feelsLike(T.v,W.v,H.v);
+    var sunF=cond==="sunny"?1:cond==="part"?0.5:0;
+    var sunAdj=Math.min(3,U.v*0.25)*sunF;
+    var base=feels+sunAdj;
+    var po=personalOffset(base);
+    var adj=base+po.off;
+    var tier=pickTier(adj);
+
+    var tips=[];
+    if(U.v>=3&&sunF>0)tips.push("자외선 "+uvLabel(U.v)+" 단계예요. 선크림을 바르세요.");
+    if(U.v>=6)tips.push("모자·선글라스를 챙기고, 가능하면 그늘로 다니세요.");
+    if(U.v>=8)tips.push("긴팔이나 얇은 겉옷으로 피부를 가려 주세요.");
+    if(W.v>=7)tips.push("바람이 강해요. 바람막이나 지퍼가 있는 겉옷이 좋아요.");
+    else if(W.v>=4)tips.push("바람이 조금 불어요. 목을 덮는 옷이 도움이 돼요.");
+    if(cond==="rain")tips.push("비가 와요. 우산과 방수되는 신발을 챙기세요.");
+    if(cond==="snow")tips.push("눈이 와요. 미끄럽지 않은 신발과 방수 겉옷을 추천해요.");
+    if(H.v>=75&&T.v>=24)tips.push("습해서 더 덥게 느껴져요. 땀 마르는 소재를 고르세요.");
+    if(adj<=0)tips.push("체감온도가 영하예요. 귀와 손도 따뜻하게 하세요.");
+    if(Math.abs(base-T.v)>=3)tips.push("실제 기온과 체감온도 차이가 "+Math.abs(base-T.v).toFixed(1)+"°C예요. 체감 기준으로 입으세요.");
+
+    last={place:place,date:date,temp:T.v,wind:W.v,uv:U.v,feels:Math.round(base*10)/10,tier:tier[1]};
+    renderResult(place,date,T.v,W.v,H.v,U.v,base,po,adj,tier,tips);
+  });
+
+  function renderResult(place,date,t,w,h,u,base,po,adj,tier,tips){
+    var box=$("result");box.innerHTML="";
+    var h2=document.createElement("h2");h2.textContent="추천 결과 · "+place+" · "+date;box.appendChild(h2);
+    var big=document.createElement("div");big.className="big";big.textContent="체감 "+adj.toFixed(1)+"°C";box.appendChild(big);
+    var stats=document.createElement("div");stats.className="stats";
+    [["실제 기온 "+t+"°C"],["바람 "+w+" m/s"],["습도 "+h+"%"],["자외선 "+u+" ("+uvLabel(u)+")"],["햇빛·바람 반영 체감 "+base.toFixed(1)+"°C"]].forEach(function(x){
+      var c=document.createElement("span");c.className="chip";c.textContent=x[0];stats.appendChild(c);});
+    box.appendChild(stats);
+    if(po.n>0){
+      var p=document.createElement("div");p.className="hint";
+      var s=po.off>0.2?"더위를 잘 타는 편":po.off<-0.2?"추위를 잘 타는 편":"평균과 비슷한 편";
+      p.textContent="후기 "+po.n+"건을 반영했어요. ("+s+", 보정 "+(po.off>=0?"+":"")+po.off.toFixed(1)+"°C)";
+      box.appendChild(p);
+    }
+    var ul=document.createElement("ul");ul.className="outfit";
+    [tier[1],tier[2]].forEach(function(x){var li=document.createElement("li");li.textContent=x;ul.appendChild(li);});
+    box.appendChild(ul);
+    if(tips.length){
+      var tl=document.createElement("ul");tl.className="tips";
+      tips.forEach(function(x){var li=document.createElement("li");li.textContent=x;tl.appendChild(li);});
+      box.appendChild(tl);
+    }
+  }
+
+  // ---------- 3. 후기 ----------
+  $("saveBtn").addEventListener("click",function(){
+    if(!last){setMsg($("rMsg"),"먼저 위에서 [옷 추천 받기]를 눌러 주세요.","err");return;}
+    var feelEl=document.querySelector('input[name="feel"]:checked');
+    if(!feelEl){setMsg($("rMsg"),"체감(추웠어요/적당했어요/더웠어요)을 선택해 주세요.","err");return;}
+    var sat=$("sat").value;
+    if(!sat){setMsg($("rMsg"),"만족도를 선택해 주세요.","err");return;}
+    var wore=$("wore").value.trim();
+    if(wore.length>40){setMsg($("rMsg"),"입은 옷은 40자 이내로 적어 주세요.","err");return;}
+    mem.reviews.push({id:Date.now(),date:last.date,place:last.place,temp:last.temp,wind:last.wind,uv:last.uv,feels:last.feels,
+      rec:last.tier,wore:wore,feel:Number(feelEl.value),sat:Number(sat)});
+    if(mem.reviews.length>200)mem.reviews=mem.reviews.slice(-200);
+    save();
+    setMsg($("rMsg"),"후기를 저장했어요. 다음 추천부터 반영돼요.","ok");
+    $("wore").value="";$("sat").value="";feelEl.checked=false;
+    renderHistory();renderLearn();
+  });
+
+  var feelText={"-1":"추웠어요","0":"적당했어요","1":"더웠어요"};
+  function renderHistory(){
+    var box=$("history");box.innerHTML="";
+    if(!mem.reviews.length){var e=document.createElement("div");e.className="empty";e.textContent="저장된 후기가 없어요.";box.appendChild(e);return;}
+    var tbl=document.createElement("table");
+    var head=document.createElement("tr");
+    ["날짜","장소","체감온도","추천","입은 옷","체감","만족도",""].forEach(function(x){var th=document.createElement("th");th.textContent=x;head.appendChild(th);});
+    tbl.appendChild(head);
+    mem.reviews.slice().reverse().forEach(function(r){
+      var tr=document.createElement("tr");
+      [r.date,r.place,r.feels+"°C",r.rec,r.wore||"-",feelText[String(r.feel)],"★".repeat(r.sat)].forEach(function(x){
+        var td=document.createElement("td");td.textContent=x;tr.appendChild(td);});
+      var td=document.createElement("td");var b=document.createElement("button");b.type="button";b.textContent="삭제";
+      b.addEventListener("click",function(){mem.reviews=mem.reviews.filter(function(x){return x.id!==r.id;});save();renderHistory();renderLearn();});
+      td.appendChild(b);tr.appendChild(td);tbl.appendChild(tr);
+    });
+    box.appendChild(tbl);
+  }
+  function renderLearn(){
+    var box=$("learn");
+    var n=mem.reviews.length;
+    if(!n){box.className="empty";box.textContent="아직 후기가 없어요. 후기를 남기면 내 체질에 맞게 추천이 달라져요.";return;}
+    var avg=mem.reviews.reduce(function(a,r){return a+r.sat;},0)/n;
+    var po=personalOffset(last?last.feels:15);
+    var s=po.off>0.2?"더위를 잘 타는 편":po.off<-0.2?"추위를 잘 타는 편":"평균과 비슷한 편";
+    box.className="";
+    box.textContent="후기 "+n+"건 · 평균 만족도 "+avg.toFixed(1)+" / 5 · 현재 보정: "+s+" ("+(po.off>=0?"+":"")+po.off.toFixed(1)+"°C)";
+  }
+  var armed=false;
+  $("clearBtn").addEventListener("click",function(){
+    if(!mem.reviews.length){return;}
+    if(!armed){armed=true;this.textContent="정말 삭제할까요? 한 번 더 누르세요";var b=this;setTimeout(function(){armed=false;b.textContent="전체 삭제";},4000);return;}
+    mem.reviews=[];save();armed=false;this.textContent="전체 삭제";renderHistory();renderLearn();
+  });
+
+  load();initDate();initPlace();renderHistory();renderLearn();
+})();
+</script>
+</body>
+</html>
